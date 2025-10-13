@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using QuanLyGiaoXu.Backend.Enums;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 namespace QuanLyGiaoXu.Backend.Entities;
@@ -18,7 +19,7 @@ public class User : IdentityUser
     public DateTime DateOfBirth { get; set; } 
 
     [MaxLength(10)]
-    public string Gender { get; set; } // "Nam", "Nữ"
+    public Genders? Gender { get; set; } // "Nam", "Nữ"
 
     [MaxLength(500)]
     public string? Address { get; set; } // Địa chỉ

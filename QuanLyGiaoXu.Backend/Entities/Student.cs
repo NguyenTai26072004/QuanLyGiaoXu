@@ -1,4 +1,5 @@
-﻿using System;
+﻿using QuanLyGiaoXu.Backend.Enums;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -24,7 +25,7 @@ public class Student
 
     [Required]
     [MaxLength(10)]
-    public string Gender { get; set; }
+    public Genders? Gender { get; set; }
 
     [MaxLength(150)]
     public string? FatherName { get; set; } // Họ tên cha đầy đủ, bao gồm Tên Thánh
