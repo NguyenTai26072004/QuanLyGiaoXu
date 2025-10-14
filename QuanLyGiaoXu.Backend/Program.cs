@@ -8,6 +8,9 @@ using Microsoft.IdentityModel.Tokens;
 using QuanLyGiaoXu.Backend.Data;
 using QuanLyGiaoXu.Backend.Entities;
 using QuanLyGiaoXu.Backend.Services;
+using QuanLyGiaoXu.Backend.Services.Authentication;
+using QuanLyGiaoXu.Backend.Services.Classes;
+using QuanLyGiaoXu.Backend.Services.Grades;
 using System.Text;
 
 // =================================================================================
@@ -61,6 +64,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IGradeService, GradeService>();
+builder.Services.AddScoped<IClassService, ClassService>();
+builder.Services.AddScoped<ISchoolYearService, SchoolYearService>();
+
 
 
 // --- C. Dịch vụ Xác thực & Phân quyền ---

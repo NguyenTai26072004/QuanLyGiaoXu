@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using QuanLyGiaoXu.Backend.DTOs.AccountDtos;
 using QuanLyGiaoXu.Backend.Entities;
 using QuanLyGiaoXu.Backend.Enums;
-using QuanLyGiaoXu.Backend.Services;
+using QuanLyGiaoXu.Backend.Services.Authentication;
 using System.Threading.Tasks;
 
 namespace QuanLyGiaoXu.Backend.Controllers

@@ -1,7 +1,7 @@
 ﻿using QuanLyGiaoXu.Backend.Entities;
 using System.Threading.Tasks;
 
-namespace QuanLyGiaoXu.Backend.Services
+namespace QuanLyGiaoXu.Backend.Services.Authentication
 {
     public interface ITokenService
     {

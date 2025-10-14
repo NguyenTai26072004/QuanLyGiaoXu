@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using QuanLyGiaoXu.Backend.DTOs.GradeDtos;
 using QuanLyGiaoXu.Backend.Enums;
-using QuanLyGiaoXu.Backend.Services;
+using QuanLyGiaoXu.Backend.Services.Grades;
 using System;
 using System.Threading.Tasks;
 

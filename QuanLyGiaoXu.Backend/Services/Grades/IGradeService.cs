@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace QuanLyGiaoXu.Backend.Services
+namespace QuanLyGiaoXu.Backend.Services.Grades
 {
     public interface IGradeService
     {

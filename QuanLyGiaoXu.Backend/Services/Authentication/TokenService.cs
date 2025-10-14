@@ -9,7 +9,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace QuanLyGiaoXu.Backend.Services
+namespace QuanLyGiaoXu.Backend.Services.Authentication
 {
     public class TokenService : ITokenService
     {

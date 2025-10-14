@@ -16,6 +16,7 @@ namespace QuanLyGiaoXu.Backend.Data
         public DbSet<Attendance> Attendances { get; set; }
         public DbSet<Score> Scores { get; set; }
         public DbSet<Grade> Grades { get; set; }
+        public DbSet<SchoolYear> SchoolYears { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -33,6 +34,12 @@ namespace QuanLyGiaoXu.Backend.Data
             builder.Entity<Grade>()
                 .HasIndex(g => g.Name)
                 .IsUnique();
+
+            builder.Entity<SchoolYear>()
+                .HasIndex(sy => sy.Year)
+                .IsUnique();
+
+
         }
     }
 }
