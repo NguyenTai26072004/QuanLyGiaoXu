@@ -12,11 +12,15 @@ using QuanLyGiaoXu.Backend.Services.Authentication;
 using QuanLyGiaoXu.Backend.Services.Classes;
 using QuanLyGiaoXu.Backend.Services.Grades;
 using System.Text;
+using OfficeOpenXml;
+
 
 // =================================================================================
 // SECTION 2: APPLICATION BUILDER SETUP & SERVICE CONFIGURATION
 // =================================================================================
+
 var builder = WebApplication.CreateBuilder(args);
+
 
 // --- A. Dịch vụ cơ bản của ASP.NET Core ---
 builder.Services.AddControllers();
@@ -66,6 +70,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IGradeService, GradeService>();
 builder.Services.AddScoped<IClassService, ClassService>();
 builder.Services.AddScoped<ISchoolYearService, SchoolYearService>();
+builder.Services.AddScoped<IStudentService, StudentService>();
 
 
 

@@ -2,6 +2,7 @@
 using QuanLyGiaoXu.Backend.DTOs.ClassDtos;
 using QuanLyGiaoXu.Backend.DTOs.GradeDtos;
 using QuanLyGiaoXu.Backend.DTOs.SchoolYearDtos;
+using QuanLyGiaoXu.Backend.DTOs.StudentDtos;
 using QuanLyGiaoXu.Backend.Entities;
 
 namespace QuanLyGiaoXu.Backend.Mappings
@@ -33,6 +34,20 @@ namespace QuanLyGiaoXu.Backend.Mappings
             // === Cấu hình cho SchoolYear ===
             CreateMap<SchoolYear, SchoolYearDto>();
             CreateMap<CreateUpdateSchoolYearDto, SchoolYear>();
+
+
+            // === Cấu hình cho Student ===
+            // Hướng đi 1: Từ Entity Student -> StudentDto
+            CreateMap<Student, StudentDto>()
+                // Xử lý Enum: Chuyển đổi giá trị Enum Gender (VD: Gender.Nam) thành chuỗi "Nam"
+                .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender.ToString()))
+                .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.Class.Name));
+
+            // Hướng đi 2: Từ DTO -> Entity (khi TẠO MỚI)
+            CreateMap<CreateStudentDto, Student>();
+
+            // Hướng đi 3: Từ DTO -> Entity (khi CẬP NHẬT)
+            CreateMap<UpdateStudentDto, Student>();
         }
     }
 }
