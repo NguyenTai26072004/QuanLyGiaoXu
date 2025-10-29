@@ -1,9 +1,15 @@
 ﻿using AutoMapper;
+using QuanLyGiaoXu.Backend.DTOs.AccountDtos;
+using QuanLyGiaoXu.Backend.DTOs.AttendanceRecordDtos;
 using QuanLyGiaoXu.Backend.DTOs.ClassDtos;
 using QuanLyGiaoXu.Backend.DTOs.GradeDtos;
+using QuanLyGiaoXu.Backend.DTOs.ParishDivisionDtos;
+using QuanLyGiaoXu.Backend.DTOs.ScheduleDtos;    
 using QuanLyGiaoXu.Backend.DTOs.SchoolYearDtos;
+using QuanLyGiaoXu.Backend.DTOs.SessionDtos;      
 using QuanLyGiaoXu.Backend.DTOs.StudentDtos;
 using QuanLyGiaoXu.Backend.Entities;
+using System.Linq;
 
 namespace QuanLyGiaoXu.Backend.Mappings
 {
@@ -11,43 +17,56 @@ namespace QuanLyGiaoXu.Backend.Mappings
     {
         public AutoMapperProfiles()
         {
-            // === Cấu hình cho Grade ===
-            // Hướng đi: từ Entity Grade -> GradeDto
-            CreateMap<Grade, GradeDto>();
 
-            // Hướng đi: từ CreateUpdateGradeDto -> Entity Grade
+            CreateMap<Grade, GradeDto>().ReverseMap(); 
             CreateMap<CreateUpdateGradeDto, Grade>();
-
-
-            // === Cấu hình cho Class ===
-            // Ánh xạ đặc biệt: lấy GradeName từ Grade.Name
-            CreateMap<Class, ClassDto>()
-                .ForMember(dest => dest.SchoolYearName, opt => opt.MapFrom(src => src.SchoolYear.Year))
-                .ForMember(dest => dest.GradeName, opt => opt.MapFrom(src => src.Grade.Name))
-                .ForMember(dest => dest.TeacherNames, opt => opt.MapFrom(src => src.UserClassAssignments.Select(uca => uca.User.FullName).ToList()))
-                .ForMember(dest => dest.NumberOfStudents, opt => opt.MapFrom(src => src.Students.Count));
-
-            CreateMap<CreateClassDto, Class>();
-            CreateMap<UpdateClassDto, Class>();
-
-
-            // === Cấu hình cho SchoolYear ===
-            CreateMap<SchoolYear, SchoolYearDto>();
+            
+            CreateMap<SchoolYear, SchoolYearDto>().ReverseMap();
             CreateMap<CreateUpdateSchoolYearDto, SchoolYear>();
+            
+            // THÊM MAP CHO SCHEDULE (Khuôn mẫu Lịch)
+            CreateMap<Schedule, ScheduleDto>() 
+                 .ForMember(d => d.SchoolYearName, o => o.MapFrom(s => s.SchoolYear.Year));
+            CreateMap<CreateScheduleDto, Schedule>(); 
+            
+            // === CẤU HÌNH CHO USER / ACCOUNT ===
+            CreateMap<User, AccountDto>()
+                .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender.HasValue ? src.Gender.Value.ToString() : null));
 
-
-            // === Cấu hình cho Student ===
-            // Hướng đi 1: Từ Entity Student -> StudentDto
+            // === CẤU HÌNH CHO STUDENT ===
             CreateMap<Student, StudentDto>()
-                // Xử lý Enum: Chuyển đổi giá trị Enum Gender (VD: Gender.Nam) thành chuỗi "Nam"
                 .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender.ToString()))
-                .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.Class.Name));
+                .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.Enrollments.FirstOrDefault(e => e.EndDate == null).Class.ClassName))
+                .ForMember(dest => dest.ParishDivisionName, opt => opt.MapFrom(src => src.ParishDivision.Name));
 
-            // Hướng đi 2: Từ DTO -> Entity (khi TẠO MỚI)
             CreateMap<CreateStudentDto, Student>();
+            CreateMap<UpdateStudentDto, Student>()
+                 .ForMember(d => d.StudentCode, o => o.Ignore());
 
-            // Hướng đi 3: Từ DTO -> Entity (khi CẬP NHẬT)
-            CreateMap<UpdateStudentDto, Student>();
+            // === CẤU HÌNH CHO CLASS ===
+            CreateMap<Class, ClassDetailDto>()
+                 .ForMember(d => d.Name, o => o.MapFrom(s => s.ClassName))
+                 .ForMember(d => d.GradeName, o => o.MapFrom(s => s.Grade.Name))
+                 .ForMember(d => d.ScheduleName, o => o.MapFrom(s => string.Join(", ", s.ClassSchedules.Select(cs => cs.Schedule.Name))))
+                 .ForMember(d => d.TeacherNames, o => o.MapFrom(s => s.UserClassAssignments.Select(ct => ct.User.FullName).ToList()))
+                 .ForMember(d => d.NumberOfStudents, o => o.MapFrom(s => s.Enrollments.Count(e => e.EndDate == null)));
+
+
+            // === CẤU HÌNH CHO ĐIỂM DANH  ===
+            CreateMap<Session, SessionDto>()
+                .ForMember(d => d.Id, o => o.MapFrom(s => s.Id));
+
+
+            // === CẤU HÌNH CHO KẾT QUẢ ĐIỂM DANH  ===
+            CreateMap<AttendanceRecord, AttendanceResultDto>()
+                .ForMember(d => d.StudentCode, o => o.MapFrom(s => s.Student.StudentCode))
+                .ForMember(d => d.FullName, o => o.MapFrom(s => s.Student.FullName))
+                .ForMember(d => d.DateOfBirth, o => o.MapFrom(s => s.Student.DateOfBirth))
+                .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()));
+
+            // === Cấu hình cho ParishDivision ===
+            CreateMap<ParishDivision, ParishDivisionDto>();
+            CreateMap<CreateUpdateParishDivisionDto, ParishDivision>();
         }
     }
 }

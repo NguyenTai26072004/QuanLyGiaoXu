@@ -6,5 +6,7 @@ namespace QuanLyGiaoXu.Backend.DTOs.SchoolYearDtos
         [Required]
         [MaxLength(20)]
         public string Year { get; set; }
+        public DateTime startDate { get; set; }
+        public DateTime endDate { get; set; }
     }
 }

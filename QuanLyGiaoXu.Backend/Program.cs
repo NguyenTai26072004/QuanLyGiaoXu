@@ -5,14 +5,20 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OfficeOpenXml;
 using QuanLyGiaoXu.Backend.Data;
 using QuanLyGiaoXu.Backend.Entities;
 using QuanLyGiaoXu.Backend.Services;
+using QuanLyGiaoXu.Backend.Services.AttendanceRecords;
 using QuanLyGiaoXu.Backend.Services.Authentication;
 using QuanLyGiaoXu.Backend.Services.Classes;
+using QuanLyGiaoXu.Backend.Services.Enrollments;
 using QuanLyGiaoXu.Backend.Services.Grades;
+using QuanLyGiaoXu.Backend.Services.ParishDivisions;
+using QuanLyGiaoXu.Backend.Services.Schedules;
+using QuanLyGiaoXu.Backend.Services.Sessions;
+using QuanLyGiaoXu.Backend.Services.Students;
 using System.Text;
-using OfficeOpenXml;
 
 
 // =================================================================================
@@ -71,6 +77,11 @@ builder.Services.AddScoped<IGradeService, GradeService>();
 builder.Services.AddScoped<IClassService, ClassService>();
 builder.Services.AddScoped<ISchoolYearService, SchoolYearService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<IScheduleService, ScheduleService>();
+builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddScoped<IAttendanceRecordService, AttendanceRecordService>();
+builder.Services.AddScoped<IEnrollmentService,  EnrollmentService>();
+builder.Services.AddScoped<IParishDivisionService, ParishDivisionService>();
 
 
 

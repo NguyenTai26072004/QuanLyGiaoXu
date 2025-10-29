@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 
 namespace QuanLyGiaoXu.Backend.Entities;
 
@@ -15,42 +16,39 @@ public class Student
 
     [Required]
     [MaxLength(20)]
-    public string StudentCode { get; set; } // Mã thiếu nhi định danh duy nhất, VD: "TC240001"
+    public string StudentCode { get; set; }
 
     [Required]
     [MaxLength(150)]
-    public string FullName { get; set; } // Họ tên đầy đủ, bao gồm Tên Thánh
+    public string FullName { get; set; }
 
+    [Required] 
     public DateTime DateOfBirth { get; set; }
 
-    [Required]
-    [MaxLength(10)]
-    public Genders? Gender { get; set; }
+    [Required] 
+    public Genders Gender { get; set; } 
 
     [MaxLength(150)]
-    public string? FatherName { get; set; } // Họ tên cha đầy đủ, bao gồm Tên Thánh
+    public string? FatherName { get; set; }
 
     [MaxLength(150)]
-    public string? MotherName { get; set; } // Họ tên mẹ đầy đủ, bao gồm Tên Thánh
-
-    [MaxLength(100)]
-    public string? ParishDivision { get; set; } // Giáo họ
+    public string? MotherName { get; set; }
+    public int? ParishDivisionId { get; set; }
+    public ParishDivision? ParishDivision { get; set; }
 
     [MaxLength(15)]
     public string? PhoneNumber { get; set; }
-    public bool IsActive { get; set; } = true; // Mặc định đang theo học
 
-    // === Foreign Key (Khóa ngoại) ===
-    // ID của lớp học mà học sinh này đang thuộc về.
-    public int? ClassId { get; set; }
+    public bool IsActive { get; set; } = true;
 
-    // === Navigation Properties ===
-    // Cho phép truy cập thông tin của lớp học từ đối tượng Student.
-    public Class? Class { get; set; }
+    // --- Navigation Properties ---
 
-    // Một học sinh có nhiều lần điểm danh
-    public ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
+    // Một học sinh có thể có nhiều bản ghi xếp lớp (phục vụ cho việc chuyển lớp, lưu lịch sử)
+    public ICollection<ClassEnrollment> Enrollments { get; set; } = new List<ClassEnrollment>();
 
     // Một học sinh có nhiều điểm số
     public ICollection<Score> Scores { get; set; } = new List<Score>();
+
+    // Một học sinh có nhiều bản ghi kết quả điểm danh
+    public ICollection<AttendanceRecord> AttendanceRecords { get; set; } = new List<AttendanceRecord>();
 }

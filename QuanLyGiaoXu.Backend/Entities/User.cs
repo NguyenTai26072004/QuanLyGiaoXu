@@ -33,4 +33,5 @@ public class User : IdentityUser
     // Giúp Entity Framework Core hiểu mối quan hệ một-nhiều: Một User có thể được phân công dạy nhiều lớp.
     // ICollection khởi tạo sẵn để tránh lỗi NullReferenceException.
     public ICollection<UserClassAssignment> UserClassAssignments { get; set; } = new List<UserClassAssignment>();
+
 }

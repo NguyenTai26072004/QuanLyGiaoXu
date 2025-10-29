@@ -23,15 +23,12 @@ namespace QuanLyGiaoXu.Backend.DTOs.StudentDtos
 
         [MaxLength(150)]
         public string? MotherName { get; set; }
-
-        [MaxLength(100)]
-        public string? ParishDivision { get; set; }
+        public int? ParishDivisionId { get; set; }
 
         [MaxLength(15)]
         public string? PhoneNumber { get; set; }
 
         public bool IsActive { get; set; }
 
-        public int? ClassId { get; set; }
     }
 }

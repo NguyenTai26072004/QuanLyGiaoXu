@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,16 +18,18 @@ namespace QuanLyGiaoXu.Backend.Controllers
     {
         private readonly UserManager<User> _userManager;
         private readonly ITokenService _tokenService;
+        private readonly IMapper _mapper;
 
         // "Tiêm" các dịch vụ cần thiết vào qua constructor
-        public AccountController(UserManager<User> userManager, ITokenService tokenService)
+        public AccountController(UserManager<User> userManager, ITokenService tokenService, IMapper mapper) 
         {
             _userManager = userManager;
             _tokenService = tokenService;
+            _mapper = mapper; // << THÊM DÒNG NÀY
         }
 
         // --- ENDPOINT ĐỂ TẠO TÀI KHOẢN MỚI ---
-        // Route sẽ là: POST /api/account/register
+        //POST: /api/account/register
         [HttpPost("register")]
         public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
         {
@@ -100,7 +103,31 @@ namespace QuanLyGiaoXu.Backend.Controllers
             };
         }
 
-       
+        // GET: /api/account
+        [HttpGet]
+        [Authorize(Roles = nameof(Roles.Admin))] 
+        public async Task<ActionResult<IEnumerable<AccountDto>>> GetUsers()
+        {
+            // Lấy tất cả user từ CSDL
+            var users = await _userManager.Users.ToListAsync();
+
+            // Chuẩn bị một danh sách để chứa kết quả DTO
+            var usersToReturn = new List<AccountDto>();
+
+            foreach (var user in users)
+            {
+                // Với mỗi user, map sang AccountDto
+                var userDto = _mapper.Map<AccountDto>(user);
+                // Lấy danh sách vai trò của user đó
+                userDto.Roles = await _userManager.GetRolesAsync(user);
+
+                usersToReturn.Add(userDto);
+            }
+
+            return Ok(usersToReturn);
+        }
+
+
 
 
         // --- Phương thức Helper (hỗ trợ) ---

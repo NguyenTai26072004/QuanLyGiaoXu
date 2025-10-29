@@ -1,35 +1,23 @@
-﻿ //Entities/Class.cs
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-
 namespace QuanLyGiaoXu.Backend.Entities;
 
-/// <summary>
-/// Đại diện cho một lớp học trong một năm học cụ thể.
-/// </summary>
 public class Class
 {
-    [Key] 
-    public int Id { get; set; }
+    [Key]
+    public int Id { get; set; } 
+    public int? GradeId { get; set; }
 
-    [Required]
     [MaxLength(100)]
-    public string Name { get; set; } // Tên lớp, VD: "Khai Tâm 1"
+    [Required] 
+    public string ClassName { get; set; }
 
-    // === Foreign Key & Navigation Property cho Grade ===
-    // ID của Khối mà lớp học này thuộc về.
-    public int GradeId { get; set; }
+    // --- Navigation Properties ---
+    public Grade? Grade { get; set; } 
 
-    // Giúp EF Core hiểu mối quan hệ và cho phép truy cập thông tin của Khối từ Lớp học.
-    public Grade Grade { get; set; }
-
-    public int SchoolYearId { get; set; }
-    public SchoolYear SchoolYear { get; set; }
-
-    // === Navigation Properties ===
-    // Một lớp có nhiều học sinh
-    public ICollection<Student> Students { get; set; } = new List<Student>();
-    // Một lớp có nhiều GLV phụ trách (thông qua bảng trung gian)
+    public ICollection<ClassEnrollment> Enrollments { get; set; } = new List<ClassEnrollment>();
+    public ICollection<Session> Sessions { get; set; } = new List<Session>();
     public ICollection<UserClassAssignment> UserClassAssignments { get; set; } = new List<UserClassAssignment>();
+
+    public ICollection<ClassSchedule> ClassSchedules { get; set; } = new List<ClassSchedule>();
 }

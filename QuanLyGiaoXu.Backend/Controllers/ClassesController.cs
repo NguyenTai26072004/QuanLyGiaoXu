@@ -1,66 +1,73 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QuanLyGiaoXu.Backend.DTOs.ClassDtos;
+using QuanLyGiaoXu.Backend.DTOs.EnrollmentDtos;
 using QuanLyGiaoXu.Backend.Enums;
-using QuanLyGiaoXu.Backend.Services;
 using QuanLyGiaoXu.Backend.Services.Classes;
+using QuanLyGiaoXu.Backend.Services.Enrollments;
 using System;
 using System.Threading.Tasks;
 
 namespace QuanLyGiaoXu.Backend.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")] // Route sẽ là /api/classes
-    [Authorize] // Bắt buộc đăng nhập cho tất cả các API trong controller này
+    [Route("api/[controller]")]
+    [Authorize]
     public class ClassesController : ControllerBase
     {
         private readonly IClassService _classService;
+        private readonly IEnrollmentService _enrollmentService;
 
-        public ClassesController(IClassService classService)
+        public ClassesController(IClassService classService, IEnrollmentService enrollmentService) 
         {
             _classService = classService;
+            _enrollmentService = enrollmentService; 
         }
 
-        // === READ APIs ===
-        [HttpGet] // GET: /api/classes
+        // GET: /api/classes
+        [HttpGet]
         public async Task<IActionResult> GetClasses()
         {
             return Ok(await _classService.GetClassesAsync());
         }
 
-        [HttpGet("{id}", Name = "GetClassById")] // GET: /api/classes/5
+        // GET: /api/classes/5
+        [HttpGet("{id}", Name = "GetClassById")]
         public async Task<IActionResult> GetClassById(int id)
         {
-            var aClass = await _classService.GetClassByIdAsync(id);
-            return aClass == null ? NotFound("Không tìm thấy lớp học.") : Ok(aClass);
+            var classDetail = await _classService.GetClassByIdAsync(id);
+            return classDetail == null ? NotFound("Không tìm thấy lớp học.") : Ok(classDetail);
         }
 
-        // === CREATE API ===
-        [HttpPost] // POST: /api/classes
-        [Authorize(Roles = nameof(Roles.Admin))] // Chỉ Admin được tạo
+        // POST: /api/classes
+        [HttpPost]
+        [Authorize(Roles = nameof(Roles.Admin))]
         public async Task<IActionResult> CreateClass(CreateClassDto createClassDto)
         {
-            var newClass = await _classService.CreateClassAsync(createClassDto);
-
-            // Lấy lại thông tin đầy đủ của lớp vừa tạo để trả về (có GradeName,...)
-            var classDto = await _classService.GetClassByIdAsync(newClass.Id);
-
-            // Trả về response 201 Created cùng với thông tin và URL của lớp mới
-            return CreatedAtAction(nameof(GetClassById), new { id = classDto.Id }, classDto);
+            try
+            {
+                var newClass = await _classService.CreateClassAndGenerateSessionsAsync(createClassDto);
+                // Dùng CreatedAtRoute thay vì CreatedAtAction
+                return CreatedAtRoute("GetClassById", new { id = newClass.Id }, newClass);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        // === UPDATE API ===
-        [HttpPut("{id}")] // PUT: /api/classes/5
-        [Authorize(Roles = nameof(Roles.Admin))] // Chỉ Admin được cập nhật
+        // PUT: /api/classes/5
+        [HttpPut("{id}")]
+        [Authorize(Roles = nameof(Roles.Admin))]
         public async Task<IActionResult> UpdateClass(int id, UpdateClassDto updateClassDto)
         {
             var result = await _classService.UpdateClassAsync(id, updateClassDto);
-            return result ? NoContent() : NotFound("Không tìm thấy lớp học để cập nhật."); // 204 No Content
+            return result ? NoContent() : NotFound("Không tìm thấy lớp học để cập nhật.");
         }
 
-        // === DELETE API ===
-        [HttpDelete("{id}")] // DELETE: /api/classes/5
-        [Authorize(Roles = nameof(Roles.Admin))] // Chỉ Admin được xóa
+        // DELETE: /api/classes/5
+        [HttpDelete("{id}")]
+        [Authorize(Roles = nameof(Roles.Admin))]
         public async Task<IActionResult> DeleteClass(int id)
         {
             try
@@ -70,17 +77,34 @@ namespace QuanLyGiaoXu.Backend.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(ex.Message); // Trả về lỗi nghiệp vụ 400 Bad Request
+                return BadRequest(ex.Message);
             }
         }
 
-        // === NGHIỆP VỤ PHÂN CÔNG GIÁO LÝ VIÊN ===
-        [HttpPost("{id}/assign-teachers")] // POST: /api/classes/5/assign-teachers
-        [Authorize(Roles = nameof(Roles.Admin))] // Chỉ Admin được phân công
-        public async Task<IActionResult> AssignTeachersToClass(int id, AssignTeacherDto assignTeacherDto)
+        // POST: /api/classes/5/assign-teachers
+        [HttpPost("{id}/assign-teachers")]
+        [Authorize(Roles = nameof(Roles.Admin))]
+        public async Task<IActionResult> AssignTeachers(int id, AssignTeachersDto assignTeachersDto)
         {
-            var result = await _classService.AssignTeachersToClassAsync(id, assignTeacherDto);
+            var result = await _classService.AssignTeachersAsync(id, assignTeachersDto);
             return result ? Ok("Phân công Giáo lý viên thành công.") : NotFound("Không tìm thấy lớp học.");
+        }
+
+
+        // POST: /api/classes/5/enrollments
+        [HttpPost("{id}/enrollments")]
+        [Authorize(Roles = nameof(Roles.Admin))] // Chỉ Admin được xếp lớp
+        public async Task<IActionResult> EnrollStudents(int id, EnrollStudentsDto enrollDto)
+        {
+            try
+            {
+                await _enrollmentService.EnrollStudentsAsync(id, enrollDto);
+                return Ok("Xếp lớp thành công.");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
     }
 }

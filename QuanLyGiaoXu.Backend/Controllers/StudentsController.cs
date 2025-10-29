@@ -81,14 +81,14 @@ namespace QuanLyGiaoXu.Backend.Controllers
         // POST: /api/students/bulk-import
         [HttpPost("bulk-import")]
         [Authorize(Roles = nameof(Roles.Admin))] // Chỉ Admin được import
-        public async Task<IActionResult> ImportStudents(IFormFile file, [FromQuery] int? classId)
+        public async Task<IActionResult> ImportStudents(IFormFile file)
         {
             if (file == null || file.Length == 0)
             {
                 return BadRequest("Vui lòng chọn một file Excel.");
             }
 
-            var result = await _studentService.ImportStudentsFromExcelAsync(file, classId);
+            var result = await _studentService.ImportStudentsFromExcelAsync(file);
 
             if (result.FailureCount > 0)
             {

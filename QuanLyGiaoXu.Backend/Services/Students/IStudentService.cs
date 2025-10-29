@@ -12,6 +12,6 @@ namespace QuanLyGiaoXu.Backend.Services
         Task<StudentDto> CreateStudentAsync(CreateStudentDto studentDto);
         Task<bool> UpdateStudentAsync(int id, UpdateStudentDto studentDto);
         Task<bool> DeleteStudentAsync(int id);
-        Task<ImportResultDto> ImportStudentsFromExcelAsync(IFormFile file, int? classId);
+        Task<ImportResultDto> ImportStudentsFromExcelAsync(IFormFile file);
     }
 }

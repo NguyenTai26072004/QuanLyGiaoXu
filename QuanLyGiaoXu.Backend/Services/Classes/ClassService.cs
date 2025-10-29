@@ -4,13 +4,12 @@ using Microsoft.EntityFrameworkCore;
 using QuanLyGiaoXu.Backend.Data;
 using QuanLyGiaoXu.Backend.DTOs.ClassDtos;
 using QuanLyGiaoXu.Backend.Entities;
-using QuanLyGiaoXu.Backend.Services.Classes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace QuanLyGiaoXu.Backend.Services
+namespace QuanLyGiaoXu.Backend.Services.Classes
 {
     public class ClassService : IClassService
     {
@@ -23,55 +22,100 @@ namespace QuanLyGiaoXu.Backend.Services
             _mapper = mapper;
         }
 
-        // --- SỬA LẠI: DÙNG ProjectTo cho hiệu quả ---
-        public async Task<List<ClassDto>> GetClassesAsync()
+        public async Task<List<ClassDetailDto>> GetClassesAsync()
         {
             return await _context.Classes
-                .ProjectTo<ClassDto>(_mapper.ConfigurationProvider)
+                .OrderBy(c => c.ClassName)
+                .ProjectTo<ClassDetailDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
         }
 
-        // --- SỬA LẠI: DÙNG ProjectTo cho hiệu quả ---
-        public async Task<ClassDto?> GetClassByIdAsync(int id)
+        public async Task<ClassDetailDto?> GetClassByIdAsync(int id)
         {
             return await _context.Classes
                 .Where(c => c.Id == id)
-                .ProjectTo<ClassDto>(_mapper.ConfigurationProvider)
+                .ProjectTo<ClassDetailDto>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
         }
 
-        // --- SỬA LỖI LOGIC TRIỆT ĐỂ Ở ĐÂY ---
-        public async Task<ClassDto> CreateClassAsync(CreateClassDto classDto)
+        public async Task<ClassDetailDto> CreateClassAndGenerateSessionsAsync(CreateClassDto createClassDto)
         {
-            // Bước 1: Mapping DTO sang Entity
-            var newClass = _mapper.Map<Class>(classDto);
+            await using var transaction = await _context.Database.BeginTransactionAsync();
 
-            // Bước 2: Lưu vào CSDL
-            await _context.Classes.AddAsync(newClass);
-            await _context.SaveChangesAsync();
-
-            // Bước 3: **RẤT QUAN TRỌNG** - Lấy lại thông tin đầy đủ của Class vừa tạo từ CSDL
-            // Bằng cách gọi lại GetClassByIdAsync, chúng ta đảm bảo tất cả dữ liệu liên quan được tải đúng
-            // và ProjectTo sẽ hoạt động chính xác.
-            var createdClassDto = await GetClassByIdAsync(newClass.Id);
-
-            // Nếu không tìm thấy vì một lý do nào đó, throw lỗi.
-            if (createdClassDto == null)
+            try
             {
-                throw new Exception("Không thể tạo hoặc lấy lại thông tin lớp học.");
-            }
+                // === Bước 1: Tạo Lớp học cơ bản ===
+                var newClass = new Class
+                {
+                    ClassName = createClassDto.ClassName,
+                    GradeId = createClassDto.GradeId
+                };
+                await _context.Classes.AddAsync(newClass);
+                await _context.SaveChangesAsync();
 
-            return createdClassDto;
+                // === Bước 2: Tạo Lịch trình và Sinh Sessions ===
+                var sessionsToCreate = new List<Session>();
+
+                // Lặp qua từng ScheduleId mà người dùng gửi lên
+                foreach (var scheduleId in createClassDto.ScheduleIds)
+                {
+                    // Thêm bản ghi vào bảng trung gian ClassSchedules
+                    _context.ClassSchedules.Add(new ClassSchedule { ClassId = newClass.Id, ScheduleId = scheduleId });
+
+                    // Lấy thông tin khuôn mẫu lịch
+                    var schedule = await _context.Schedules
+                        .Include(s => s.SchoolYear)
+                        .FirstOrDefaultAsync(s => s.Id == scheduleId);
+
+                    if (schedule == null || schedule.SchoolYear == null)
+                        throw new KeyNotFoundException($"Khuôn mẫu lịch học với ID {scheduleId} không hợp lệ.");
+
+                    // Sinh Sessions cho khuôn mẫu lịch này
+                    var startDate = schedule.SchoolYear.StartDate;
+                    var endDate = schedule.SchoolYear.EndDate;
+                    var dayOfWeek = (DayOfWeek)schedule.DefaultDayOfWeek;
+                    var timeOfDay = schedule.DefaultTime;
+
+                    for (var currentDate = startDate.Date; currentDate <= endDate.Date; currentDate = currentDate.AddDays(1))
+                    {
+                        if (currentDate.DayOfWeek == dayOfWeek)
+                        {
+                            sessionsToCreate.Add(new Session
+                            {
+                                ClassId = newClass.Id,
+                                SessionDate = currentDate.Date + timeOfDay,
+                                SessionType = 1,
+                            });
+                        }
+                    }
+                }
+
+                if (sessionsToCreate.Any())
+                {
+                    await _context.Sessions.AddRangeAsync(sessionsToCreate);
+                }
+
+                // Lưu tất cả các thay đổi (ClassSchedules và Sessions)
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                return await GetClassByIdAsync(newClass.Id);
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
-        public async Task<bool> UpdateClassAsync(int id, UpdateClassDto classDto)
+        public async Task<bool> UpdateClassAsync(int id, UpdateClassDto updateClassDto)
         {
             var existingClass = await _context.Classes.FindAsync(id);
             if (existingClass == null) return false;
 
-            _mapper.Map(classDto, existingClass);
-            await _context.SaveChangesAsync();
-            return true;
+            _mapper.Map(updateClassDto, existingClass);
+            return await _context.SaveChangesAsync() > 0;
         }
 
         public async Task<bool> DeleteClassAsync(int id)
@@ -79,33 +123,36 @@ namespace QuanLyGiaoXu.Backend.Services
             var existingClass = await _context.Classes.FindAsync(id);
             if (existingClass == null) return false;
 
-            if (await _context.Students.AnyAsync(s => s.ClassId == id))
+            if (await _context.ClassEnrollments.AnyAsync(e => e.ClassId == id))
             {
-                throw new InvalidOperationException("Không thể xóa lớp này vì đang có học sinh.");
+                throw new InvalidOperationException("Không thể xóa lớp này vì đang có học sinh được xếp lớp.");
             }
 
-            _context.UserClassAssignments.RemoveRange(existingClass.UserClassAssignments); // Xóa các phân công liên quan
-            _context.Classes.Remove(existingClass);
+            // Cũng nên xóa các Sessions liên quan
+            var sessions = _context.Sessions.Where(s => s.ClassId == id);
+            _context.Sessions.RemoveRange(sessions);
 
-            await _context.SaveChangesAsync();
-            return true;
+            // Xóa các phân công liên quan
+            var assignments = _context.UserClassAssignments.Where(a => a.ClassId == id);
+            _context.UserClassAssignments.RemoveRange(assignments);
+
+            _context.Classes.Remove(existingClass);
+            return await _context.SaveChangesAsync() > 0;
         }
 
-        public async Task<bool> AssignTeachersToClassAsync(int classId, AssignTeacherDto assignTeacherDto)
+        public async Task<bool> AssignTeachersAsync(int id, AssignTeachersDto assignTeachersDto)
         {
-            var existingClass = await _context.Classes
-                .Include(c => c.UserClassAssignments)
-                .FirstOrDefaultAsync(c => c.Id == classId);
-
+            var existingClass = await _context.Classes.Include(c => c.UserClassAssignments)
+                .FirstOrDefaultAsync(c => c.Id == id);
             if (existingClass == null) return false;
 
             // Xóa các phân công cũ
             _context.UserClassAssignments.RemoveRange(existingClass.UserClassAssignments);
 
-            // Tạo các phân công mới
-            foreach (var teacherId in assignTeacherDto.TeacherIds)
+            // Thêm các phân công mới
+            foreach (var teacherId in assignTeachersDto.TeacherIds)
             {
-                _context.UserClassAssignments.Add(new UserClassAssignment { ClassId = classId, UserId = teacherId });
+                _context.UserClassAssignments.Add(new UserClassAssignment { ClassId = id, UserId = teacherId });
             }
 
             return await _context.SaveChangesAsync() > 0;
